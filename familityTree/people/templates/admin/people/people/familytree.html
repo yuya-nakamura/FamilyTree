@@ -1,0 +1,95 @@
+{% extends 'admin/base_site.html' %} {% block extrahead %}
+<link href="/static/css/style.css" rel="stylesheet" />
+<script src="/static/plugins/d3.min.js"></script>
+<script src="/static/plugins/dagre-d3.min.js"></script>
+<script>
+window.onload = function () {
+    var g = new dagreD3.graphlib.Graph().setGraph({});
+
+    var nodes = {{ family | safe }};
+    var marries = {{ marriages | safe }};
+
+    // topレベルはdisplay:none
+    g.setNode('top', {
+        label: '',
+        style: 'display: none;'
+    });
+
+    nodes.forEach(function(element) {
+        var option = {
+            label: element.name
+        };
+        if(!element.display) {
+            option.style = 'display: none;';
+        }
+        g.setNode(element.id, option);
+    });
+
+    nodes.forEach(function(element) {
+        var option = {
+            arrowhead: 'undirected'
+        };
+        var regexp = /g[0-9]+m[0-9]+/g;
+        if(element.parent_node === 'top' ||
+            (element.parent_node.match(regexp) && element.id.match(regexp)) || 
+            element.marriage_flg) {
+            option.style = 'display: none;';
+        }
+        g.setEdge(element.parent_node, element.id, option);
+    });
+
+    var svg = d3.select('svg'),
+        inner = svg.select('g');
+
+    // Set up zoom support
+    var zoom = d3.behavior.zoom().on('zoom', function () {
+        inner.attr('transform', 'translate(' + d3.event.translate + ')' + 'scale(' + d3.event.scale + ')');
+    });
+    svg.call(zoom);
+
+    //Create the renderer
+    var render = new dagreD3.render();
+
+    // Run the renderer. This is what draws the final graph.
+    render(inner, g);
+
+    // 婚姻関係を描画する
+    var output = svg.select('g .output');
+    var siblings = output.insert('g', 'g.nodes')
+        .attr('class', 'siblings');
+
+    marries.forEach(function(element) {
+        siblings.append('path')
+            .attr('class', 'sibling')
+            .attr('d', sblingLine);
+
+        function sblingLine(d, i) {
+            var node1 = g.node(element.node1);
+            var node2 = g.node(element.node2);
+            var linedata = [{
+                x: node1.x,
+                y: node1.y
+            }, {
+                x: node2.x,
+                y: node2.y
+            }];
+            var fun = d3.svg.line().x(function (d) {
+                return d.x;
+            }).y(function (d) {
+                return d.y;
+            }).interpolate('linear');
+            return fun(linedata);
+        }
+    });
+
+    // Center the graph
+    var initialScale = 1;
+    zoom.translate([(window.innerWidth - g.graph().width * initialScale) / 2, 20])
+        .scale(initialScale)
+        .event(svg);
+};
+</script> {% endblock extrahead %} {% block content %}
+<svg>
+    <g></g>
+</svg>
+{% endblock content %}
