@@ -1,0 +1,15 @@
+// 既定の設定とユーザー設定を上書きするには、このファイル内に設定を挿入します
+{
+    "python.pythonPath": "env/bin/python",
+    "python.autoComplete.extraPaths": [
+        "env/lib/python3.5/site-packages"
+    ],
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.pylintArgs": [
+        "--load-plugins",
+        "pylint_django"
+    ],
+    "python.linting.lintOnTextChange": true,
+    "python.linting.lintOnSave": true
+}
