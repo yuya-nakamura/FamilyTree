@@ -16,11 +16,16 @@ window.onload = function () {
     });
 
     nodes.forEach(function(element) {
+        var name = element.name;
+        var birthday = element.birthday;
+        var dieday = element.dieday ? element.dieday : '';
+
         var option = {
-            label: element.name
+            label: element.name + '\nBirthDay ' + birthday + '\nDieDay ' + dieday
         };
         if(!element.display) {
             option.style = 'display: none;';
+            option.labelStyle = 'display: none;';
         }
         g.setNode(element.id, option);
     });
@@ -29,7 +34,7 @@ window.onload = function () {
         var option = {
             arrowhead: 'undirected'
         };
-        var regexp = /g[0-9]+m[0-9]+/g;
+        var regexp = /g[0-9]+f[0-9]+m[0-9]+/g;
         if(element.parent_node === 'top' ||
             (element.parent_node.match(regexp) && element.id.match(regexp)) || 
             element.marriage_flg) {

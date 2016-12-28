@@ -2,11 +2,11 @@
 """
 adminサイトの設定
 """
+import json
 from django.contrib import admin
 from django.conf.urls import url
 from django.template.response import TemplateResponse
 from .models import People
-import json
 
 
 @admin.register(People)
@@ -52,8 +52,10 @@ class PeopleAdmin(admin.ModelAdmin):
         family.append(top.toJson(generation, 'top'))
         if top.marriage:
             marriage_people = top.marriage
+            father = top if top.sex else marriage_people
+            mother = marriage_people if marriage_people.sex is False else top
             marrie = {
-                'id': 'g%sm%s%s' % (generation, top.pk, marriage_people.pk),
+                'id': 'g%sf%sm%s' % (generation, father.pk, mother.pk),
                 'name': '',
                 'display': False,
                 'generation': generation,
@@ -82,12 +84,16 @@ def deep_get_people(children, family, marriages, generation):
     married_people = list()
     for child in children:
         child.generation = generation
-        parent_node = 'g%sm%s%s' % (generation - 1, child.parent.pk, child.parent.marriage.pk)
+        father = child.parent if child.parent.sex else child.parent.marriage
+        mother = child.parent.marriage if child.parent.marriage.sex is False else child.parent
+        parent_node = 'g%sf%sm%s' % (generation - 1, father.pk, mother.pk)
         family.append(child.toJson(generation, parent_node))
         if child.marriage:
             child_marriage_people = child.marriage
+            child_father = child if child.sex else child_marriage_people
+            child_mother = child_marriage_people if child_marriage_people.sex is False else child
             marrie = {
-                'id': 'g%sm%s%s' % (generation, child.pk, child_marriage_people.pk),
+                'id': 'g%sf%sm%s' % (generation, child_father.pk, child_mother.pk),
                 'name': '',
                 'display': False,
                 'generation': generation,
