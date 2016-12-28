@@ -6,15 +6,15 @@ from django.db import models
 
 
 SEX_LIST = (
-    (None, ''),
     (True, '男'),
     (False, '女')
 )
 
+
 class People(models.Model):
     name = models.CharField(verbose_name='名前', max_length=50)
     birthday = models.DateField(verbose_name='誕生日')
-    sex = models.NullBooleanField(verbose_name='性別', default=None, choices=SEX_LIST)
+    sex = models.BooleanField(verbose_name='性別', choices=SEX_LIST, default=True)
     dieday = models.DateField(verbose_name='没年月日', blank=True, null=True)
     marriage = models.ForeignKey('self', related_name='marriage_people',
                                  verbose_name='婚約者', blank=True, null=True)
