@@ -29,6 +29,19 @@ class People(models.Model):
         verbose_name = '人'
         verbose_name_plural = '人々'
 
+    def addColumn(self, generation, parent_node):
+        return {
+            'id': self.name + str(self.pk),
+            'name': self.name,
+            'birthday': self.birthday,
+            'sex': self.sex,
+            'dieday': self.dieday,
+            'display': True,
+            'generation': generation,
+            'marriage_flg': self.marriage_flg,
+            'parent_node': parent_node
+        }
+
     def toJson(self, generation, parent_node):
         """
         家系図出力用のjsonファイルに変換します。
