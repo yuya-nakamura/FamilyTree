@@ -6,7 +6,13 @@ import json
 from django.contrib import admin
 from django.conf.urls import url
 from django.template.response import TemplateResponse
-from .models import People
+from django.db.models import Q
+from .models import People, Marriage
+
+
+class MarriageInline(admin.TabularInline):
+    model = Marriage
+    fk_name = 'husband'
 
 
 @admin.register(People)
@@ -15,6 +21,9 @@ class PeopleAdmin(admin.ModelAdmin):
     Peopleの管理サイトの設定です。
     """
     list_display = ('name', 'sex', 'my_url_field')
+    inlines = [
+        MarriageInline
+    ]
 
     def get_urls(self):
         urls = super().get_urls()
@@ -27,7 +36,7 @@ class PeopleAdmin(admin.ModelAdmin):
         """
         家系図出力用のURLを表示します。
         """
-        if obj.parent is None and obj.marriage_flg is False:
+        if obj.father is None and obj.mother is None and obj.marriage_flg is False:
             return '<a href="%s%s">%s</a>' % ('familytree/',
                                               obj.pk, obj.name + '家')
         else:
@@ -49,27 +58,21 @@ class PeopleAdmin(admin.ModelAdmin):
         generation = 1
         top = People.objects.get(pk=people)
         top.generation = generation
-        family.append(top.toJson(generation, 'top'))
-        if top.marriage:
-            marriage_people = top.marriage
-            father = top if top.sex else marriage_people
-            mother = marriage_people if marriage_people.sex is False else top
-            marrie = {
-                'id': 'g%sf%sm%s' % (generation, father.pk, mother.pk),
-                'name': '',
-                'display': False,
-                'generation': generation,
-                'parent_node': 'top',
-                'node1': top.name + str(top.pk),
-                'node2': marriage_people.name + str(marriage_people.pk)
-            }
-            family.append(marrie)
-            marriages.append(marrie)
-            family.append(marriage_people.toJson(generation, 'top'))
+        marries = Marriage.objects.filter(Q(husband=top.pk) | Q(wife=top.pk))
+        family.append(top.toJson(generation, 'top', len(marries) - 1))
+
+        marry_count = 0
+        for marry in marries:
+            marry_json = marry.toJson(generation, 'top', marry_count)
+            family.append(marry_json)
+            marriages.append(marry_json)
+            people = marry.husband if marry.husband.pk != top.pk else marry.wife
+            family.append(people.toJson(generation, 'top', marry_count))
 
             # 子供を取得する
-            children = People.objects.filter(parent__in=[top.pk, marriage_people.pk])
+            children = People.objects.filter(father=marry.husband.pk, mother=marry.wife.pk)
             deep_get_people(children, family, marriages, generation)
+            marry_count += 1
 
         context['family'] = json.dumps(family, ensure_ascii=False, indent=2)
         context['marriages'] = json.dumps(marriages, ensure_ascii=False, indent=2)
@@ -81,30 +84,21 @@ def deep_get_people(children, family, marriages, generation):
     子供を取得するために下に潜っていきます。
     """
     generation += 1
-    married_people = list()
+    next_children = list()
     for child in children:
         child.generation = generation
-        father = child.parent if child.parent.sex else child.parent.marriage
-        mother = child.parent.marriage if child.parent.marriage.sex is False else child.parent
-        parent_node = 'g%sf%sm%s' % (generation - 1, father.pk, mother.pk)
-        family.append(child.toJson(generation, parent_node))
-        if child.marriage:
-            child_marriage_people = child.marriage
-            child_father = child if child.sex else child_marriage_people
-            child_mother = child_marriage_people if child_marriage_people.sex is False else child
-            marrie = {
-                'id': 'g%sf%sm%s' % (generation, child_father.pk, child_mother.pk),
-                'name': '',
-                'display': False,
-                'generation': generation,
-                'parent_node': parent_node,
-                'node1': child.name + str(child.pk),
-                'node2': child_marriage_people.name + str(child_marriage_people.pk)
-            }
-            family.append(marrie)
-            marriages.append(marrie)
-            family.append(child_marriage_people.toJson(generation, parent_node))
-            married_people.extend([child.pk, child_marriage_people.pk])
-    if len(married_people) != 0:
-        next_children = People.objects.filter(parent__in=married_people)
+        parent_node = 'g%sf%sm%s' % (generation - 1, child.father.pk, child.mother.pk)
+        marries = Marriage.objects.filter(Q(husband=child.pk) | Q(wife=child.pk))
+        family.append(child.toJson(generation, parent_node, len(marries) - 1))
+
+        marry_count = 0
+        for marry in marries:
+            marry_json = marry.toJson(generation, parent_node, marry_count)
+            family.append(marry_json)
+            marriages.append(marry_json)
+            people = marry.husband if marry.husband.pk != child.pk else marry.wife
+            family.append(people.toJson(generation, parent_node, marry_count))
+            next_children.extend(People.objects.filter(father=marry.husband.pk, mother=marry.wife.pk))
+            marry_count += 1
+    if len(next_children) != 0:
         deep_get_people(next_children, family, marriages, generation)

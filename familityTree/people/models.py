@@ -13,13 +13,14 @@ SEX_LIST = (
 
 class People(models.Model):
     name = models.CharField(verbose_name='名前', max_length=50)
+    name_yomi = models.CharField(verbose_name='読み', max_length=200)
     birthday = models.DateField(verbose_name='誕生日')
     sex = models.BooleanField(verbose_name='性別', choices=SEX_LIST, default=True)
     dieday = models.DateField(verbose_name='没年月日', blank=True, null=True)
-    marriage = models.ForeignKey('self', related_name='marriage_people',
-                                 verbose_name='婚約者', blank=True, null=True)
     marriage_flg = models.BooleanField(verbose_name='婚約者フラグ', default=False)
-    parent = models.ForeignKey('self', related_name='parent_people', verbose_name='親',
+    father = models.ForeignKey('self', related_name='father_people', verbose_name='父',
+                               blank=True, null=True)
+    mother = models.ForeignKey('self', related_name='mother_people', verbose_name='母',
                                blank=True, null=True)
 
     def __str__(self):
@@ -42,7 +43,7 @@ class People(models.Model):
             'parent_node': parent_node
         }
 
-    def toJson(self, generation, parent_node):
+    def toJson(self, generation, parent_node, marry_count):
         """
         家系図出力用のjsonファイルに変換します。
         """
@@ -57,7 +58,35 @@ class People(models.Model):
             'sex': self.sex,
             'dieday': disp_dieday,
             'display': True,
+            'marriage': False,
             'generation': generation,
             'marriage_flg': self.marriage_flg,
-            'parent_node': parent_node
+            'parent_node': parent_node,
+            'marry_count': marry_count
+        }
+
+
+class Marriage(models.Model):
+    label = models.CharField(verbose_name='名前', max_length=50, blank=True, null=True)
+    husband = models.ForeignKey(People, related_name='husband_people', verbose_name='夫')
+    wife = models.ForeignKey(People, related_name='wife_people', verbose_name='妻')
+
+    def __str__(self):
+        return self.label
+
+    class Meta:
+        verbose_name = '婚約'
+        verbose_name_plural = '婚約達'
+
+    def toJson(self, generation, parent_node, marry_count):
+        return {
+            'id': 'g%sf%sm%s' % (generation, self.husband.pk, self.wife.pk),
+            'name': self.label,
+            'display': False,
+            'marriage': True,
+            'generation': generation,
+            'parent_node': parent_node,
+            'marry_count': marry_count,
+            'node1': self.husband.name + str(self.husband.pk),
+            'node2': self.wife.name + str(self.wife.pk)
         }
