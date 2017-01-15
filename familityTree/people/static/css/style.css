@@ -11,6 +11,14 @@ svg {
     font-size: 20px;
 }
 
+.male rect {
+    stroke: deepskyblue !important;
+}
+
+.female rect {
+    stroke: deeppink !important;
+}
+
 .node rect,
 .node circle,
 .node ellipse {
@@ -27,4 +35,8 @@ svg {
 
 .sibling {
     stroke: blue;
+}
+
+.verticalline {
+    stroke: #333;
 }

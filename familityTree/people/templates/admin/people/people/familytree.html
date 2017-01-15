@@ -27,6 +27,16 @@ window.onload = function () {
             option.style = 'display: none;';
             option.labelStyle = 'display: none;';
         }
+        if(element.sex) {
+            option.class = 'male'
+        } else {
+            option.class = 'female'
+        }
+
+        if(element.marriage) {
+            option.class = String(element.marry_count);
+        }
+
         g.setNode(element.id, option);
     });
 
@@ -58,33 +68,64 @@ window.onload = function () {
     // Run the renderer. This is what draws the final graph.
     render(inner, g);
 
-    // 婚姻関係を描画する
     var output = svg.select('g .output');
+
+    var verticallines = output.insert('g', 'g.nodes')
+        .attr('class', 'verticallines');
+
+    nodes.forEach(function(element) {
+        if(element.display) {
+            verticallines.append('path')
+                .attr('class', 'verticalline')
+                .attr('d', function(d, i) {
+                    var node = g.node(element.id);
+                    var length = node.elem.firstChild.height.baseVal.value / 2 + 8;
+                    var marry_count = element.marry_count;
+                    var offset = 8 * marry_count;
+                    var linedata = [{
+                        x: node.x,
+                        y: node.y
+                    }, {
+                        x: node.x,
+                        y: node.y + length + offset
+                    }];
+                    var fun = d3.svg.line().x(function(d) {
+                        return d.x;
+                    }).y(function(d) {
+                        return d.y;
+                    }).interpolate('linear');
+                    return fun(linedata);
+                });
+        }
+    });
+
+    // 婚姻関係を描画する
     var siblings = output.insert('g', 'g.nodes')
         .attr('class', 'siblings');
 
     marries.forEach(function(element) {
         siblings.append('path')
             .attr('class', 'sibling')
-            .attr('d', sblingLine);
-
-        function sblingLine(d, i) {
-            var node1 = g.node(element.node1);
-            var node2 = g.node(element.node2);
-            var linedata = [{
-                x: node1.x,
-                y: node1.y
-            }, {
-                x: node2.x,
-                y: node2.y
-            }];
-            var fun = d3.svg.line().x(function (d) {
-                return d.x;
-            }).y(function (d) {
-                return d.y;
-            }).interpolate('linear');
-            return fun(linedata);
-        }
+            .attr('d', function(d, i) {
+                var node1 = g.node(element.node1);
+                var node2 = g.node(element.node2);
+                var nodeHeight = node1.elem.firstChild.height.baseVal.value / 2 + 8;
+                var marry_count = element.marry_count ? element.marry_count : 0;
+                var offset = 8 * marry_count;
+                var linedata = [{
+                    x: node1.x,
+                    y: node1.y + nodeHeight + offset
+                }, {
+                    x: node2.x,
+                    y: node2.y + nodeHeight + offset
+                }];
+                var fun = d3.svg.line().x(function (d) {
+                    return d.x;
+                }).y(function (d) {
+                    return d.y;
+                }).interpolate('linear');
+                return fun(linedata);
+            });
     });
 
     // Center the graph
