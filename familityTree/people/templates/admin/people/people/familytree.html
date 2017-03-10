@@ -134,9 +134,22 @@ window.onload = function () {
     zoom.translate([(window.innerWidth - g.graph().width * initialScale) / 2, 20])
         .scale(initialScale)
         .event(svg);
+    d3.select('#export').on('click', function() {
+        var graph = g.graph();
+        exportSvg(graph.width, graph.height);
+    });
+    d3.select('#export_png').on('click', function() {
+        var graph = g.graph();
+        exportPng(graph.width + 10, graph.height + 10);
+    })
 };
 </script> {% endblock extrahead %} {% block content %}
-<svg>
-    <g></g>
-</svg>
+<div id="svg">
+    <svg>
+        <g></g>
+    </svg>
+</div>
+
+<button id="export">export</button>
+<button id="export_png">export png</button>
 {% endblock content %}

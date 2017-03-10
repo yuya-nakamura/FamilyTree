@@ -34,8 +34,20 @@ function explicitlySetStyle(element) {
     element.setAttribute('style', computedStyleStr);
 }
 
-function exportSvg() {
-    var svg = d3.select('svg').attr('version', 1.1).attr('xmlns', 'http://www.w3.org/2000/svg').node();
+function createSvg(width, height) {
+    var original = d3.select('#svg').node();
+    var div = d3.select('body')
+                .append('div')
+                .attr('id', 'output-svg')
+                .style('display', 'none')
+                .html(original.innerHTML)
+                .node()
+    var svg = d3.select('#output-svg svg')
+                .attr('version', 1.1)
+                .attr('xmlns', 'http://www.w3.org/2000/svg')
+                .attr('width', width)
+                .attr('height', height)
+                .node();
 
     //コピーしたsvgから全てのエレメントを取り出す
     var allElements = traverse(svg);
@@ -43,18 +55,54 @@ function exportSvg() {
     while (i--) {
         explicitlySetStyle(allElements[i]); //エレメントにcss -> atributeの変換を適用する
     }
-    var html = svg.parentNode.innerHTML.replace(/\NS\d*:/g, '');
-    html = html.replace('<br class=\"clear\">', '');
+    var html = svg.parentNode.innerHTML.replace(/\NS\d*:/gi, '');
+    html = html.replace(/transform=".*?"/, '');
+    var start = '<svg';
+    var end = '</svg>';
+    html = html.slice(html.indexOf(start), html.indexOf(end) + end.length);
     html = html.replace(/[^\x00-\x7f]/g, function(x) {
       return '&#' + x.charCodeAt(0) + ';';
     });
-    var imgsrc = 'data:image/svg+xml;base64,' + btoa(html, true);
-    var source = 'data:text/html;charset=utf-8,' + encodeURI('<html><head></head><body><p><img style="width: 100vw; height: 100vh;" src="' + imgsrc + '"></p></body>');
+    div.remove();
+    return 'data:image/svg+xml;base64,' + btoa(html, true);
+}
+
+function exportSvg(width, height) {
+    var imgsrc = createSvg(width, height);
+    var source = 'data:text/html;charset=utf-8,' + encodeURI('<html><head></head><body><p><img style="width:' + width + 'px; height: ' + height + 'px;" src="' + imgsrc + '"></p></body>');
     var a = d3.select('body').append('a');
     a.attr('class', 'downloadLink')
      .attr('download', 'chart.svg')
+     .attr('target', '_blank')
      .attr('href', source)
      .text('test')
      .style('display', 'none')
     a.node().click();
+    setTimeout(function() {
+        a.remove();
+    }, 10);
+}
+
+function exportPng(width, height) {
+    var imgsrc = createSvg(width, height);
+    var canvas = d3.select('body').append('canvas');
+    canvas.style('display', 'none')
+          .attr('id', 'canvas1')
+          .attr('width', width)
+          .attr('height', height)
+    var ctx = canvas.node().getContext('2d');
+    var image = new Image();
+    image.onload = function() {
+        ctx.drawImage(image, 0, 0);
+        var source = 'data:text/html;charset=utf-8,' + encodeURI('<html><head></head><body><p><img style="width:' + width + 'px; height: ' + height + 'px;" src="' + canvas.node().toDataURL('image/png') + '"></p></body>');
+        var a = d3.select('body').append('a');
+        a.attr('class', 'downloadLink')
+         .attr('download', 'chart.png')
+         .attr('target', '_blank')
+         .attr('href', source)
+         .text('download png')
+         .style('display', 'none')
+        a.node().click();
+    }
+    image.src = imgsrc;
 }
