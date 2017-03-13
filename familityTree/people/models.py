@@ -2,6 +2,7 @@
 """
 Peopleモデルの定義
 """
+from datetime import datetime
 from django.db import models
 
 
@@ -23,9 +24,36 @@ class People(models.Model):
     mother = models.ForeignKey('self', related_name='mother_people', verbose_name='母',
                                blank=True, null=True)
     relation = models.PositiveSmallIntegerField(verbose_name='続柄', blank=True, null=True)
+    age = models.PositiveSmallIntegerField(verbose_name='年齢', blank=True, null=True)
 
     def __str__(self):
         return self.name
+
+    def get_relation(self):
+        if self.relation is None:
+            return None
+        if self.sex:
+            return ['長男', '次男', '三男', '四男', '五男', '六男', '七男', '八男', '九男', '十男'][self.relation - 1]
+        else:
+            return ['長女', '次女', '三女', '四女', '五女', '六女', '七女', '八女', '九女', '十女'][self.relation - 1]
+
+    def get_age(self):
+        if self.birthday is None:
+            return None
+        if self.dieday is not None:
+            if self.age is not None:
+                return self.age
+            else:
+                die = int(self.dieday.strftime('%Y%m%d'))
+                birth = int(self.birthday.strftime('%Y%m%d'))
+                age = int((die - birth) / 10000)
+                self.age = age
+                self.save()
+                return self.age
+        else:
+            today = int(datetime.today().strftime('%Y%m%d'))
+            birth = int(self.birthday.strftime('%Y%m%d'))
+            return int((today - birth) / 10000)
 
     class Meta:
         verbose_name = '人'
@@ -65,10 +93,11 @@ class People(models.Model):
             'dieday': disp_dieday,
             'display': True,
             'marriage': False,
-            'generation': generation,
+            'generation': self.get_relation(),
             'marriage_flg': self.marriage_flg,
             'parent_node': parent_node,
-            'marry_count': marry_count
+            'marry_count': marry_count,
+            'age': self.get_age()
         }
 
 

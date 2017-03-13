@@ -59,7 +59,7 @@ class PeopleAdmin(admin.ModelAdmin):
         top = People.objects.get(pk=people)
         top.generation = generation
         marries = Marriage.objects.filter(Q(husband=top.pk) | Q(wife=top.pk))
-        family.append(top.toJson('top', len(marries) - 1))
+        family.append(top.toJson(None, 'top', len(marries) - 1))
 
         marry_count = 0
         for marry in marries:
@@ -67,10 +67,10 @@ class PeopleAdmin(admin.ModelAdmin):
             family.append(marry_json)
             marriages.append(marry_json)
             people = marry.husband if marry.husband.pk != top.pk else marry.wife
-            family.append(people.toJson('top', marry_count))
+            family.append(people.toJson(None, 'top', marry_count))
 
             # 子供を取得する
-            children = People.objects.filter(father=marry.husband.pk, mother=marry.wife.pk)
+            children = People.objects.filter(father=marry.husband.pk, mother=marry.wife.pk).order_by('relation')
             deep_get_people(children, family, marriages, generation)
             marry_count += 1
 
@@ -90,16 +90,16 @@ def deep_get_people(children, family, marriages, generation):
         parent_node = 'g%sf%sm%s' % (generation - 1, child.father.pk, child.mother.pk)
         marries = Marriage.objects.filter(Q(husband=child.pk) | Q(wife=child.pk))
 
-        family.append(child.toJson(parent_node, len(marries) - 1))
+        family.append(child.toJson(generation, parent_node, len(marries) - 1))
 
         marry_count = 0
         for marry in marries:
-            marry_json = marry.toJson(parent_node, marry_count)
+            marry_json = marry.toJson(generation, parent_node, marry_count)
             family.append(marry_json)
             marriages.append(marry_json)
             people = marry.husband if marry.husband.pk != child.pk else marry.wife
-            family.append(people.toJson(parent_node, marry_count))
-            next_children.extend(People.objects.filter(father=marry.husband.pk, mother=marry.wife.pk))
+            family.append(people.toJson(None, parent_node, marry_count))
+            next_children.extend(People.objects.filter(father=marry.husband.pk, mother=marry.wife.pk).order_by('birthday'))
             marry_count += 1
     if len(next_children) != 0:
         deep_get_people(next_children, family, marriages, generation)

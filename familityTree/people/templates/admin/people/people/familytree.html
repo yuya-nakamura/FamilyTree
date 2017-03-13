@@ -18,6 +18,7 @@ window.onload = function () {
 
     nodes.forEach(function(element) {
         var label = element.name;
+        label += element.age !== null ? '（' + element.age + '）' : '';
         label += element.name_kana !== '' ? '\n' + element.name_kana : '\n ';
         label += element.generation !== null ? '\n' + element.generation : '\n ';
         label += element.birthday !== null ? '\nBirthDay ' + element.birthday : '\n ';
