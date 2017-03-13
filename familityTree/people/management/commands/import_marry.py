@@ -1,5 +1,6 @@
 from csv import reader
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from people.models import People, Marriage
 
 
@@ -7,6 +8,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('file_path', nargs='+', type=str)
 
+    @transaction.atomic
     def handle(self, *args, **options):
         for file_path in options['file_path']:
             with open(file_path, newline='') as csv_file:

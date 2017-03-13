@@ -1,6 +1,7 @@
 from csv import reader
 from datetime import datetime
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from people.models import People
 
 
@@ -11,6 +12,7 @@ class Command(BaseCommand):
     '''
     名前,読み仮名,誕生日,死去日,性別,父親,母親
     '''
+    @transaction.atomic
     def handle(self, *args, **options):
         for file_path in options['file_path']:
             with open(file_path, newline='') as csv_file:
@@ -20,6 +22,7 @@ class Command(BaseCommand):
                 )
                 for row in csv_reader:
                     name = row[0]
+                    print(name)
                     kana = row[1]
                     sex = row[4] == '0'
                     birthday = None
