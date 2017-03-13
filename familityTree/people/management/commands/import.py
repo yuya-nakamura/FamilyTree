@@ -22,7 +22,7 @@ class Command(BaseCommand):
                     name = row[0]
                     kana = row[1]
                     sex = row[4] == '0'
-                    birthday = datetime.now()
+                    birthday = None
                     try:
                         birthday = datetime.strptime(row[2], '%Y.%m.%d')
                     except ValueError:

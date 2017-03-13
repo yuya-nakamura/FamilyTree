@@ -17,12 +17,14 @@ window.onload = function () {
     });
 
     nodes.forEach(function(element) {
-        var name = element.name;
-        var birthday = element.birthday;
-        var dieday = element.dieday ? element.dieday : '';
+        var label = element.name;
+        label += element.name_kana !== '' ? '\n' + element.name_kana : '\n ';
+        label += element.generation !== null ? '\n' + element.generation : '\n ';
+        label += element.birthday !== null ? '\nBirthDay ' + element.birthday : '\n ';
+        label += element.dieday !== null ? '\nDieDay ' + element.dieday : '\n ';
 
         var option = {
-            label: element.name + '\nBirthDay ' + birthday + '\nDieDay ' + dieday
+            label: label
         };
         if(!element.display) {
             option.style = 'display: none;';

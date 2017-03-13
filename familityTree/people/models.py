@@ -14,14 +14,15 @@ SEX_LIST = (
 class People(models.Model):
     name = models.CharField(verbose_name='名前', max_length=50)
     name_yomi = models.CharField(verbose_name='読み', max_length=200)
-    birthday = models.DateField(verbose_name='誕生日')
+    birthday = models.DateField(verbose_name='誕生日', blank=True, null=True)
     sex = models.BooleanField(verbose_name='性別', choices=SEX_LIST, default=True)
-    dieday = models.DateField(verbose_name='没年月日', blank=True, null=True)
+    dieday = models.DateField(verbose_name='命日', blank=True, null=True)
     marriage_flg = models.BooleanField(verbose_name='婚約者フラグ', default=False)
     father = models.ForeignKey('self', related_name='father_people', verbose_name='父',
                                blank=True, null=True)
     mother = models.ForeignKey('self', related_name='mother_people', verbose_name='母',
                                blank=True, null=True)
+    relation = models.PositiveSmallIntegerField(verbose_name='続柄', blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -34,6 +35,7 @@ class People(models.Model):
         return {
             'id': self.name + str(self.pk),
             'name': self.name,
+            'name_kana': self.name_yomi,
             'birthday': self.birthday,
             'sex': self.sex,
             'dieday': self.dieday,
@@ -48,13 +50,17 @@ class People(models.Model):
         家系図出力用のjsonファイルに変換します。
         """
         disp_dieday = None
+        disp_birthday = None
         if self.dieday is not None:
             disp_dieday = self.dieday.strftime('%Y/%m/%d')
+        if self.birthday is not None:
+            disp_birthday = self.birthday.strftime('%Y/%m/%d')
 
         return {
             'id': self.name + str(self.pk),
             'name': self.name,
-            'birthday': self.birthday.strftime('%Y/%m/%d'),
+            'name_kana': self.name_yomi,
+            'birthday': disp_birthday,
             'sex': self.sex,
             'dieday': disp_dieday,
             'display': True,
